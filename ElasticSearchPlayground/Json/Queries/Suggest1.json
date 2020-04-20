@@ -1,0 +1,12 @@
+{
+  "_source": false,
+  "suggest": {
+    "completer": {
+      "prefix": "ani",
+      "completion": {
+        "field": "related",
+        "skip_duplicates": true
+      }
+    }
+  }
+}

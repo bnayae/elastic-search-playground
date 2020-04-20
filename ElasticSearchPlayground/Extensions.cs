@@ -23,6 +23,10 @@ namespace ElasticSearchPlayground
         {
             return jdoc.RootElement.GetProperty(key).GetString();
         }
+        public static bool GetBool(this JsonDocument jdoc, string key)
+        {
+            return jdoc.RootElement.GetProperty(key).GetBoolean();
+        }
         public static string GetSourceString(this JsonDocument jdoc, string key)
         {
             return jdoc.RootElement
