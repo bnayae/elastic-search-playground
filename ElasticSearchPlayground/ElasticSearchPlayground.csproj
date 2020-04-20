@@ -10,6 +10,7 @@
     <None Remove="Json\Docs\Doc2.json" />
     <None Remove="Json\Docs\Doc3.json" />
     <None Remove="Json\Queries\Suggest1.json" />
+    <None Remove="Json\Queries\Suggest1Fuzzy.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -31,6 +32,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Json\Docs\Doc2.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Json\Queries\Suggest1Fuzzy.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Json\Queries\Suggest1.json">

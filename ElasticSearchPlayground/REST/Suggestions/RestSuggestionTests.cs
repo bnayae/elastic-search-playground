@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -21,6 +22,7 @@ namespace ElasticSearchPlayground
         private readonly HttpClient _client;
         private readonly ITestOutputHelper _outputHelper;
         private const string INDEX_1 = "test-index-1";
+        private static readonly TimeSpan DELAY_WAIT_FOR_WRITE = TimeSpan.FromSeconds(1);
 
         #region Ctor
 
@@ -123,7 +125,41 @@ namespace ElasticSearchPlayground
         {
             await Create_Index1_Docs(false);
 
+            await Task.Delay(DELAY_WAIT_FOR_WRITE);
+
             string data = File.ReadAllText(@"Json\Queries\Suggest1.json");
+            var requestJson = JsonDocument.Parse(data);
+            HttpContent content = data.AsJsonContent();
+
+            //string baseUrl = "/test-postman-1/_search";
+            string baseUrl = $"/{INDEX_1}/_search";
+            string url = $"{baseUrl}?timeout=10s";
+            HttpResponseMessage response = await _client.PostAsync(url, content);
+            Stream stream = await response.Content.ReadAsStreamAsync();
+            JsonDocument json = await JsonDocument.ParseAsync(stream);
+            _outputHelper.WriteLine(json.ToJsonString());
+
+            JsonElement completer = json.GetElement("suggest", "completer");
+            JsonElement found = completer[0].GetElement("options");
+            var items = found.EnumerateArray().ToArray();
+
+            Assert.Single(items, e => e.Get<string>("text") == "Animal");
+            Assert.Single(items, e => e.Get<string>("text") == "animal");
+            Assert.Equal(2, items.Length);
+        }
+
+        #endregion Search_Index1_1_Test
+
+        #region Search_Fuzzy_Index1_1_Test
+
+        [Fact]
+        public async Task Search_Fuzzy_Index1_1_Test()
+        {
+            await Create_Index1_Docs(false);
+
+            await Task.Delay(DELAY_WAIT_FOR_WRITE);
+
+            string data = File.ReadAllText(@"Json\Queries\Suggest1Fuzzy.json");
             var requestJson = JsonDocument.Parse(data);
             HttpContent content = data.AsJsonContent();
 
@@ -135,13 +171,16 @@ namespace ElasticSearchPlayground
             var json = await JsonDocument.ParseAsync(stream);
             _outputHelper.WriteLine(json.ToJsonString());
 
-            //Assert.Equal(index, json.GetString("_index"));
-            //Assert.Equal("_doc", json.GetString("_type"));
-            //Assert.Equal("created", json.GetString("result"));
-            //Assert.NotEmpty(json.GetString("_id"));
+            JsonElement completer = json.GetElement("suggest", "completer");
+            JsonElement found = completer[0].GetElement("options");
+            var items = found.EnumerateArray().ToArray();
+
+            Assert.Single(items, e => e.Get<string>("text") == "Animal");
+            Assert.Single(items, e => e.Get<string>("text") == "animal");
+            Assert.Equal(2, items.Length);
         }
 
-        #endregion Search_Index1_1_Test
+        #endregion Search_Fuzzy_Index1_1_Test
 
     }
 }
