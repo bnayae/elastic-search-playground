@@ -10,32 +10,38 @@ using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
-// Setup docker: docker run -p 5601:5601 -p 9200:9200 -p 5044:5044 -it --name elk sebp/elk
+// docker run -it --rm --name elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.6.2
+
 // Suggesters: Beyond Autocomplete: https://www.youtube.com/watch?v=PQGlhbf7o7c
+// Suggester: https://www.elastic.co/guide/en/elasticsearch/reference/7.x/search-suggesters.html
+
+
+// TODO: check mapping (test): http://localhost:9200/test-index-text-completion/_mapping/field/title
 
 #pragma warning disable AMNF0001 // Asynchronous method name is not ending with 'Async'
 
 namespace ElasticSearchPlayground
 {
-    public sealed class RestSuggestionTests : IDisposable
+    public abstract class RestSuggestionBase : IDisposable
     {
-        private readonly HttpClient _client;
+        protected readonly HttpClient _client;
         private readonly ITestOutputHelper _outputHelper;
-        private const string INDEX_1 = "test-index-1";
-        private static readonly TimeSpan DELAY_WAIT_FOR_WRITE = TimeSpan.FromSeconds(1);
+        private readonly string _index;
+        protected static readonly TimeSpan DELAY_WAIT_FOR_WRITE = TimeSpan.FromSeconds(1);
 
         #region Ctor
 
-        public RestSuggestionTests(ITestOutputHelper outputHelper)
+        public RestSuggestionBase(ITestOutputHelper outputHelper, string index)
         {
             _client = new HttpClient();
             _outputHelper = outputHelper;
-
+            _index = index;
             _client.BaseAddress = new Uri("http://localhost:9200");
             _client.DefaultRequestHeaders
                     .Accept
                     .Add(new MediaTypeWithQualityHeaderValue("*/*"));
-                    //.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            _client.DefaultRequestHeaders.CacheControl = new CacheControlHeaderValue { NoCache = true };
+            //.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             //_client.DefaultRequestHeaders
             //        .Add("Accept-Encoding", "gzip, deflate, br");
         }
@@ -46,22 +52,30 @@ namespace ElasticSearchPlayground
 
         public void Dispose()
         {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        protected virtual void Dispose(bool disposed) 
+        {
             _client.Dispose();
+        }
+
+        ~RestSuggestionBase() 
+        {
+            Dispose(false);
         }
 
         #endregion Dispose
 
-        #region Create_Index1_Test
+        #region CreateIndexAsync
 
-        [Fact]
-        public Task Create_Index1_Test() => Create_Index1(true);
-        private async Task Create_Index1(bool withWrite)
+        protected async Task CreateIndexAsync(bool withWrite)
         {
-            string data = File.ReadAllText($@"Json\{INDEX_1}.json");
+            string data = File.ReadAllText($@"Json\{_index}.json");
             var requestJson = JsonDocument.Parse(data);
             HttpContent content = data.AsJsonContent();
 
-            string baseUrl = $"/{INDEX_1}";
+            string baseUrl = $"/{_index}";
             string url = $"{baseUrl}?timeout=10s";
             string urlExists = $"{baseUrl}/_search?timeout=10s";
             try
@@ -76,24 +90,22 @@ namespace ElasticSearchPlayground
 
                 Assert.True(json.GetBool("acknowledged"));
                 Assert.True(json.GetBool("shards_acknowledged"));
-                Assert.Equal(INDEX_1, json.GetString("index"));
+                Assert.Equal(_index, json.GetString("index"));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
         }
 
-        #endregion Create_Index1_Test
+        #endregion CreateIndexAsync
 
-        #region Create_Index1_Docs_Test
+        #region CreateDocsAsync
 
-        [Fact]
-        public Task Create_Index1_Docs_Test() => Create_Index1_Docs(true);
-        private async Task Create_Index1_Docs(bool withWrite)
+        protected async Task CreateDocsAsync(bool withWrite)
         {
-            await Create_Index1(false);
-            string baseUrl = $"/{INDEX_1}/_doc";
+            await CreateIndexAsync(false);
+            string baseUrl = $"/{_index}/_doc";
             string url = $"{baseUrl}?timeout=10s";
             foreach (var file in Directory.GetFiles($@"Json\Docs"))
             {
@@ -109,78 +121,75 @@ namespace ElasticSearchPlayground
                 if (withWrite)
                     _outputHelper.WriteLine(json.ToJsonString());
 
-                Assert.Equal(INDEX_1, json.GetString("_index"));
+                Assert.Equal(_index, json.GetString("_index"));
                 Assert.Equal("_doc", json.GetString("_type"));
                 Assert.Equal("created", json.GetString("result"));
                 Assert.NotEmpty(json.GetString("_id"));
             }
         }
 
-        #endregion Create_Index1_Docs_Test
+        #endregion CreateDocsAsync
 
-        #region Search_Index1_1_Test
+        #region SearchAsync
 
-        [Fact]
-        public async Task Search_Index1_1_Test()
+        protected async Task<JsonDocument> SearchAsync(string queryPath)
         {
-            await Create_Index1_Docs(false);
+            await CreateDocsAsync(false);
 
             await Task.Delay(DELAY_WAIT_FOR_WRITE);
 
-            string data = File.ReadAllText(@"Json\Queries\Suggest1.json");
+            string data = File.ReadAllText(queryPath);
             var requestJson = JsonDocument.Parse(data);
             HttpContent content = data.AsJsonContent();
 
-            //string baseUrl = "/test-postman-1/_search";
-            string baseUrl = $"/{INDEX_1}/_search";
+            string baseUrl = $"/{_index}/_search";
             string url = $"{baseUrl}?timeout=10s";
             HttpResponseMessage response = await _client.PostAsync(url, content);
             Stream stream = await response.Content.ReadAsStreamAsync();
             JsonDocument json = await JsonDocument.ParseAsync(stream);
             _outputHelper.WriteLine(json.ToJsonString());
 
-            JsonElement completer = json.GetElement("suggest", "completer");
-            JsonElement found = completer[0].GetElement("options");
-            var items = found.EnumerateArray().ToArray();
-
-            Assert.Single(items, e => e.Get<string>("text") == "Animal");
-            Assert.Single(items, e => e.Get<string>("text") == "animal");
-            Assert.Equal(2, items.Length);
+            return json;
         }
 
-        #endregion Search_Index1_1_Test
+        #endregion SearchAsync
 
-        #region Search_Fuzzy_Index1_1_Test
+        #region AnalyzeAsync
 
-        [Fact]
-        public async Task Search_Fuzzy_Index1_1_Test()
+        protected async Task<JsonDocument> AnalyzeAsync(string queryPath)
         {
-            await Create_Index1_Docs(false);
+            await CreateIndexAsync(false);
 
-            await Task.Delay(DELAY_WAIT_FOR_WRITE);
-
-            string data = File.ReadAllText(@"Json\Queries\Suggest1Fuzzy.json");
+            string data = File.ReadAllText(queryPath);
             var requestJson = JsonDocument.Parse(data);
             HttpContent content = data.AsJsonContent();
 
-            //string baseUrl = "/test-postman-1/_search";
-            string baseUrl = $"/{INDEX_1}/_search";
-            string url = $"{baseUrl}?timeout=10s";
+            string url = $"/{_index}/_analyze";
             HttpResponseMessage response = await _client.PostAsync(url, content);
             Stream stream = await response.Content.ReadAsStreamAsync();
-            var json = await JsonDocument.ParseAsync(stream);
+            JsonDocument json = await JsonDocument.ParseAsync(stream);
             _outputHelper.WriteLine(json.ToJsonString());
 
-            JsonElement completer = json.GetElement("suggest", "completer");
-            JsonElement found = completer[0].GetElement("options");
-            var items = found.EnumerateArray().ToArray();
-
-            Assert.Single(items, e => e.Get<string>("text") == "Animal");
-            Assert.Single(items, e => e.Get<string>("text") == "animal");
-            Assert.Equal(2, items.Length);
+            return json;
         }
 
-        #endregion Search_Fuzzy_Index1_1_Test
+        #endregion AnalyzeAsync
 
+        #region MappingAsync
+
+        protected async Task<JsonDocument> MappingAsync(string field)
+        {
+            await CreateIndexAsync(false);
+            
+            string url = $"/{_index}/_mapping/field/{field}";
+            HttpResponseMessage response = await _client.GetAsync(url);
+            Stream stream = await response.Content.ReadAsStreamAsync();
+            JsonDocument json = await JsonDocument.ParseAsync(stream);
+            _outputHelper.WriteLine(json.ToJsonString());
+
+            return json;
+        }
+
+        #endregion MappingAsync
     }
 }

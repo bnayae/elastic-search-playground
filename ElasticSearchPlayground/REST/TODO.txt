@@ -1,0 +1,1 @@
+﻿- Stemmer: https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-stemmer-tokenfilter.html

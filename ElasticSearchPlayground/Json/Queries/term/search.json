@@ -1,0 +1,12 @@
+{
+  "size": 10,
+  "_source": true,
+  "suggest": {
+    "spell-check-1": {
+      "text": "dog",
+      "term": {
+        "field": "title"
+      }
+    }
+  }
+}

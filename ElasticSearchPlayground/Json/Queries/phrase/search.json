@@ -1,0 +1,11 @@
+{
+  "suggest": {
+    "phrase-lookup": {
+      "text": "QUaCK BROWN FOX",
+      "phrase": {
+        "field": "title.phrasey",
+        "confidence": 1
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "suggest": {
+    "phrase-lookup": {
+      "text": "QUaCK BuWN FOX jump",
+      "phrase": {
+        "field": "title.phrasey",
+        "confidence": 0.9
+      }
+    }
+  }
+}

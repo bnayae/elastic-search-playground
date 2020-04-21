@@ -9,8 +9,16 @@
   <ItemGroup>
     <None Remove="Json\Docs\Doc2.json" />
     <None Remove="Json\Docs\Doc3.json" />
-    <None Remove="Json\Queries\Suggest1.json" />
-    <None Remove="Json\Queries\Suggest1Fuzzy.json" />
+    <None Remove="Json\Queries\completer\analyze.json" />
+    <None Remove="Json\Queries\phrase\analyze.json" />
+    <None Remove="Json\Queries\phrase\search-confidence.json" />
+    <None Remove="Json\Queries\phrase\search.json" />
+    <None Remove="Json\Queries\suggest-completer-1-fuzzy.json" />
+    <None Remove="Json\Queries\suggest-completer-1.json" />
+    <None Remove="Json\Queries\suggest-term-1.json" />
+    <None Remove="Json\Queries\term\analyze.json" />
+    <None Remove="Json\test-index-phrase-suggest.json" />
+    <None Remove="Json\test-index-text-completion.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,13 +42,37 @@
     <Content Include="Json\Docs\Doc2.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Json\Queries\Suggest1Fuzzy.json">
+    <Content Include="Json\Queries\completer\analyze.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Json\Queries\Suggest1.json">
+    <Content Include="Json\Queries\phrase\analyze.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Json\test-index-1.json">
+    <Content Include="Json\Queries\phrase\search-confidence.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Json\Queries\phrase\search.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Json\Queries\term\analyze.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Json\Queries\term\search.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Json\Queries\completer\search-fuzzy.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Json\Queries\completer\search.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Json\test-index-phrase-suggest.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Json\test-index-text-completion.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Json\test-index-keyword-completion.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Json\Docs\Doc1.json">

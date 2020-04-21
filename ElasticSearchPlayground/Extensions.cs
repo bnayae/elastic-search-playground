@@ -73,6 +73,10 @@ namespace ElasticSearchPlayground
 
         public static string GetString(this JsonDocument jdoc, params string[] keys) => jdoc.Get<string>(keys);
 
+        public static string GetRawText(this JsonDocument jdoc, params string[] keys) => jdoc.GetElement(keys).GetRawText();
+
+        public static string GetRawText(this JsonElement jElment, params string[] keys) => jElment.GetElement(keys).GetRawText();
+
         public static bool GetBool(this JsonDocument jdoc, params string[] keys) => jdoc.Get<bool>(keys);
         public static double GetDouble(this JsonDocument jdoc, params string[] keys) => jdoc.Get<double>(keys);
 

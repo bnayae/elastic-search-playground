@@ -1,0 +1,35 @@
+{
+  "settings": {
+    "index": {
+      "analysis": {
+        "filter": {
+          "phrase-filter": {
+            "type": "shingle",
+            "min_shingle_size": 2,
+            "max_shingle_size": 3
+          }
+        },
+        "analyzer": {
+          "phrase-analyzer": {
+            "type": "custom",
+            "tokenizer": "standard",
+            "filter": [ "lowercase", "stop", "phrase-filter" ]
+          }
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "title": {
+        "type": "keyword",
+        "fields": {
+          "phrasey": {
+            "type": "text",
+            "analyzer": "phrase-analyzer"
+          }
+        }
+      }
+    }
+  }
+}
